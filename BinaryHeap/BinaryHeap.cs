@@ -19,7 +19,7 @@ namespace BinaryHeap
 
         private List<QueueElement<TValue, TPriority>> heap = new List<QueueElement<TValue, TPriority>>();
 
-        private Dictionary<TValue, QueueElement<TValue, TPriority>> fastAccess = new Dictionary<TValue, QueueElement<TValue, TPriority>>();
+        private Dictionary<TValue, Dictionary<int, QueueElement<TValue, TPriority>>> fastAccess = new Dictionary<TValue, Dictionary<int, QueueElement<TValue, TPriority>>>();
 
         private readonly Comparison<TPriority> comparison;
 
@@ -49,22 +49,23 @@ namespace BinaryHeap
         /// higher values.</param>
         public void Enqueue(TValue value, TPriority priority)
         {
-            ref QueueElement<TValue, TPriority> reference = ref CollectionsMarshal.GetValueRefOrNullRef(fastAccess, value);
+            ref Dictionary<int, QueueElement<TValue, TPriority>> reference = ref CollectionsMarshal.GetValueRefOrNullRef(fastAccess, value);
             if (Unsafe.IsNullRef(ref reference))
-                return;
+                fastAccess[value] = new Dictionary<int, QueueElement<TValue, TPriority>>();
 
             heap.Add(new QueueElement<TValue, TPriority>(value, priority));
             int valueIndex = heap.Count() - 1;
             // bubble up
             int parentIndex = 1;
             QueueElement<TValue, TPriority> buffer;
-
+            
             if (valueIndex % 2 == 0)
                 parentIndex = (valueIndex - 2) / 2;
             else
                 parentIndex = (valueIndex - 1) / 2;
 
-            while (parentIndex > 0)
+            int oldParentIndex;
+            while (parentIndex >= 0)
             {
                 // switch parent and child
                 if (comparison(heap[valueIndex].priority, heap[parentIndex].priority) < 0)
@@ -72,20 +73,33 @@ namespace BinaryHeap
                     buffer = heap[parentIndex];
                     heap[parentIndex] = heap[valueIndex];
                     heap[valueIndex] = buffer;
-                }
+                    buffer.index = valueIndex;
 
-                if (valueIndex % 2 == 0)
-                    parentIndex = (valueIndex - 2) / 2;
+                    oldParentIndex = parentIndex;
+                    if (valueIndex % 2 == 0)
+                    {
+                        parentIndex = (valueIndex - 2) / 2;
+                        valueIndex = oldParentIndex;
+                    }
+                    else
+                    {
+                        parentIndex = (valueIndex - 1) / 2;
+                        valueIndex = oldParentIndex;
+                    }
+                }
                 else
-                    parentIndex = (valueIndex - 1) / 2;
+                    break;
             }
+
+            heap[valueIndex].index = valueIndex;
+            fastAccess[value][valueIndex] = heap[valueIndex]; 
         }
 
         /// <summary>
         /// Returns top element, which is elemenent accrding to comparison delegate. Throws InvalidOperationException if queue is empty
         /// </summary>
         /// <returns></returns>
-        public QueueElement<TValue, TPriority> Top()
+        public IQueueElement<TValue, TPriority> Top()
         {
             if (!heap.Any())
                 throw new InvalidOperationException("Queue is empty.");
@@ -101,7 +115,7 @@ namespace BinaryHeap
             return heap.Any();
         }
 
-        public QueueElement<TValue, TPriority> Dequeue()
+        public IQueueElement<TValue, TPriority> Dequeue()
         {
             if (!heap.Any())
                 throw new InvalidOperationException("Queue is empty.");
@@ -115,7 +129,8 @@ namespace BinaryHeap
             int parentIndex = 0;
             while(rightIndex < heap.Count() - 1)
             {
-                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[leftIndex].priority) < 0)
+                // Equels in second part => queue is stable
+                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[leftIndex].priority) <= 0)
                 {
                     buffer = heap[leftIndex];
                     heap[leftIndex] = heap[parentIndex];
@@ -125,8 +140,8 @@ namespace BinaryHeap
                     rightIndex = 2 * parentIndex + 2;
                     leftIndex = rightIndex - 1;    
                 }
-
-                if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[rightIndex].priority) < 0)
+                // Equels in second part => queue is stable
+                if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[rightIndex].priority) <= 0)
                 {
                     buffer = heap[rightIndex];
                     heap[rightIndex] = heap[parentIndex];
@@ -140,6 +155,26 @@ namespace BinaryHeap
 
             fastAccess.Remove(heap[0].value);
             return value;
+        }
+
+        public bool TryFind(TValue value, out List<IQueueElement<TValue, TPriority>> priority)
+        {
+            if (fastAccess.TryGetValue(value, out var values))
+            {
+                priority = values.Values.Select(x => (IQueueElement<TValue,TPriority>)x).ToList();
+                return true;
+            }
+
+            priority = new List<IQueueElement<TValue, TPriority>>();
+            return false;
+        }
+
+
+        public bool Update(int index, TValue value, TPriority priority) 
+        {
+            // TODO: Update value and priority at index
+
+            return true;
         }
     }
 }
