@@ -32,7 +32,7 @@ namespace BinaryHeap
         }
 
         /// <summary>
-        /// For case TPriority does not implement IComparable interface
+        /// In case your TPriority does not implement IComparable interface, you must provide your own comparing method <paramref name="comparison"/>.
         /// </summary>
         /// <param name="comparison">Comparison for types that not implement IComparable interface</param>
         /// <exception cref="ArgumentNullException"></exception>
@@ -42,7 +42,8 @@ namespace BinaryHeap
         }
 
         /// <summary>
-        /// Adds an element with the specified value and priority to the priority queue. TValue has to be unique, heap will ignore adding duplicit TValue.
+        /// Adds an element with the specified <paramref name="value"/> and <paramref name="priority"/> to the priority queue. 
+        /// <paramref name="value"/> has to be unique, heap will ignore adding duplicit TValue.
         /// </summary>
         /// <param name="value">The value to add to the queue.</param>
         /// <param name="priority">The priority associated with the value. Elements with lower priority values are dequeued before those with
@@ -54,42 +55,8 @@ namespace BinaryHeap
                 fastAccess[value] = new Dictionary<int, QueueElement<TValue, TPriority>>();
 
             heap.Add(new QueueElement<TValue, TPriority>(value, priority));
-            int valueIndex = heap.Count() - 1;
-            // bubble up
-            int parentIndex = 1;
-            QueueElement<TValue, TPriority> buffer;
-            
-            if (valueIndex % 2 == 0)
-                parentIndex = (valueIndex - 2) / 2;
-            else
-                parentIndex = (valueIndex - 1) / 2;
 
-            int oldParentIndex;
-            while (parentIndex >= 0)
-            {
-                // switch parent and child
-                if (comparison(heap[valueIndex].priority, heap[parentIndex].priority) < 0)
-                {
-                    buffer = heap[parentIndex];
-                    heap[parentIndex] = heap[valueIndex];
-                    heap[valueIndex] = buffer;
-                    buffer.index = valueIndex;
-
-                    oldParentIndex = parentIndex;
-                    if (valueIndex % 2 == 0)
-                    {
-                        parentIndex = (valueIndex - 2) / 2;
-                        valueIndex = oldParentIndex;
-                    }
-                    else
-                    {
-                        parentIndex = (valueIndex - 1) / 2;
-                        valueIndex = oldParentIndex;
-                    }
-                }
-                else
-                    break;
-            }
+            int valueIndex = BubbleUp(heap.Count() - 1);
 
             heap[valueIndex].index = valueIndex;
             fastAccess[value][valueIndex] = heap[valueIndex]; 
@@ -121,39 +88,20 @@ namespace BinaryHeap
                 throw new InvalidOperationException("Queue is empty.");
             var value = heap[0];
             heap[0] = heap[heap.Count() - 1];   // insert last element at 0 index
+            fastAccess[heap[0].value].Remove(heap[0].index);    // delete old index from fastAccess
+            heap[0].index = 0;
 
-            // bubble down
-            QueueElement<TValue, TPriority> buffer;
-            int rightIndex = 2;
-            int leftIndex = 1;
-            int parentIndex = 0;
-            while(rightIndex < heap.Count() - 1)
-            {
-                // Equels in second part => queue is stable
-                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[leftIndex].priority) <= 0)
-                {
-                    buffer = heap[leftIndex];
-                    heap[leftIndex] = heap[parentIndex];
-                    heap[parentIndex] = buffer;
+            int parentIndex = BubbleDown(0);
 
-                    parentIndex = leftIndex;
-                    rightIndex = 2 * parentIndex + 2;
-                    leftIndex = rightIndex - 1;    
-                }
-                // Equels in second part => queue is stable
-                if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) < 0 && comparison(heap[parentIndex].priority, heap[rightIndex].priority) <= 0)
-                {
-                    buffer = heap[rightIndex];
-                    heap[rightIndex] = heap[parentIndex];
-                    heap[parentIndex] = buffer;
+            // add element after bubbling down at key parentIndex, which is a new index where element is at.
+            fastAccess[heap[parentIndex].value].Add(parentIndex, heap[parentIndex]);
 
-                    parentIndex = rightIndex;
-                    rightIndex = 2 * parentIndex + 2;
-                    leftIndex = rightIndex - 1;
-                }
-            }
+            // delete dequed element from fastAccess
+            fastAccess[value.value].Remove(value.index);
+            if (!fastAccess[value.value].Any())
+                fastAccess.Remove(value.value);
 
-            fastAccess.Remove(heap[0].value);
+
             return value;
         }
 
@@ -169,12 +117,125 @@ namespace BinaryHeap
             return false;
         }
 
-
+        /// <summary>
+        /// Updates element at <paramref name="index"/> position with <paramref name="value"/> and <paramref name="priority"/>.
+        /// </summary>
+        /// <param name="index">Index of updated element.</param>
+        /// <param name="value">New value for element.</param>
+        /// <param name="priority">New priority for element.</param>
+        /// <returns></returns>
         public bool Update(int index, TValue value, TPriority priority) 
         {
-            // TODO: Update value and priority at index
+            // throws IndexOutOfRangeException if index is out of range
+            heap[index].priority = priority;
+            if (fastAccess.TryGetValue(heap[index].value, out var values))  // delete element at value, index
+                values.Remove(index);
 
+            heap[index].value = value;
+
+            int newIndex = BubbleDown(index);
+            if (newIndex == index)
+                BubbleUp(index);
+
+            // update fastAccess dictionary
+            if (fastAccess.TryGetValue(value, out values))
+                values.Add(newIndex, heap[newIndex]);
+            else
+            {
+                var dict = new Dictionary<int, QueueElement<TValue, TPriority>>();
+                dict.Add(newIndex, heap[newIndex]);
+                fastAccess[value] = dict;
+            }
             return true;
+        }
+
+        /// <summary>
+        /// Bubble down element at <paramref name="index"/> to right position.
+        /// </summary>
+        /// <param name="index">Index of element to bubble down.</param>
+        /// <returns>Index where element end up after bubble down.</returns>
+        private int BubbleDown(int index)
+        {
+            // bubble down
+            QueueElement<TValue, TPriority> buffer;
+            int rightIndex = 2 * index + 2;
+            int leftIndex = 2 * index + 1;
+            while (rightIndex < heap.Count() - 1)
+            {
+                // if left node switch with current node. Order is stable, due to right part of if statemenet
+                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) < 0 && comparison(heap[index].priority, heap[leftIndex].priority) <= 0)
+                {
+                    buffer = heap[leftIndex];
+                    heap[leftIndex] = heap[index];
+                    heap[index] = buffer;
+
+                    index = leftIndex;
+                    rightIndex = 2 * index + 2;
+                    leftIndex = rightIndex - 1;
+                }
+                // if right node switch with current node. Order is stable, due to right part of if statemenet
+                else if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) < 0 && comparison(heap[index].priority, heap[rightIndex].priority) <= 0)
+                {
+                    buffer = heap[rightIndex];
+                    heap[rightIndex] = heap[index];
+                    heap[index] = buffer;
+
+                    index = rightIndex;
+                    rightIndex = 2 * index + 2;
+                    leftIndex = rightIndex - 1;
+                }
+                else
+                    break;
+            }
+
+            heap[index].index = index;
+            return index;
+        }
+
+        /// <summary>
+        /// Bubble up element at <paramref name="valueIndex"/>.
+        /// </summary>
+        /// <param name="valueIndex">Index of element to bubble up.</param>
+        /// <returns>Index where element end up after bubble up.</returns>
+        public int BubbleUp(int valueIndex)
+        {
+            // bubble up
+            int parentIndex;
+            QueueElement<TValue, TPriority> buffer;
+
+            if (valueIndex % 2 == 0)
+                parentIndex = (valueIndex - 2) / 2;
+            else
+                parentIndex = (valueIndex - 1) / 2;
+
+            int oldParentIndex;
+            while (parentIndex >= 0)
+            {
+                // switch parent and child
+                if (comparison(heap[valueIndex].priority, heap[parentIndex].priority) < 0)
+                {
+                    buffer = heap[parentIndex];
+                    heap[parentIndex] = heap[valueIndex];
+                    heap[valueIndex] = buffer;
+
+                    oldParentIndex = parentIndex;
+                    if (valueIndex % 2 == 0)
+                    {
+                        parentIndex = (valueIndex - 2) / 2;
+                        valueIndex = oldParentIndex;
+                    }
+                    else
+                    {
+                        parentIndex = (valueIndex - 1) / 2;
+                        valueIndex = oldParentIndex;
+                    }
+                }
+                else
+                    break;
+            }
+
+            heap[valueIndex].index = valueIndex;
+            return valueIndex;
         }
     }
 }
