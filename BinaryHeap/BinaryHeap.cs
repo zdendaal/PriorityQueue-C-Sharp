@@ -43,7 +43,7 @@ namespace BinaryHeap
 
         /// <summary>
         /// Adds an element with the specified <paramref name="value"/> and <paramref name="priority"/> to the priority queue. 
-        /// <paramref name="value"/> has to be unique, heap will ignore adding duplicit TValue.
+        /// <paramref name="value"/> has to be unique, heap will ignore adding TValue.
         /// </summary>
         /// <param name="value">The value to add to the queue.</param>
         /// <param name="priority">The priority associated with the value. Elements with lower priority values are dequeued before those with
@@ -79,7 +79,7 @@ namespace BinaryHeap
         /// <returns>true if empty, otherwise false</returns>
         public bool IsEmpty()
         {
-            return heap.Any();
+            return !heap.Any();
         }
 
         public IQueueElement<TValue, TPriority> Dequeue()
@@ -91,10 +91,16 @@ namespace BinaryHeap
             fastAccess[heap[0].value].Remove(heap[0].index);    // delete old index from fastAccess
             heap[0].index = 0;
 
-            int parentIndex = BubbleDown(0);
+            heap.RemoveAt(heap.Count() - 1);
 
-            // add element after bubbling down at key parentIndex, which is a new index where element is at.
-            fastAccess[heap[parentIndex].value].Add(parentIndex, heap[parentIndex]);
+            if (heap.Count() > 0)
+            {
+
+                int parentIndex = BubbleDown(0);
+
+                // add element after bubbling down at key parentIndex, which is a new index where element is at.
+                fastAccess[heap[parentIndex].value].Add(parentIndex, heap[parentIndex]);
+            }
 
             // delete dequed element from fastAccess
             fastAccess[value.value].Remove(value.index);
@@ -135,7 +141,7 @@ namespace BinaryHeap
 
             int newIndex = BubbleDown(index);
             if (newIndex == index)
-                BubbleUp(index);
+                newIndex = BubbleUp(index);
 
             // update fastAccess dictionary
             if (fastAccess.TryGetValue(value, out values))
@@ -160,25 +166,33 @@ namespace BinaryHeap
             QueueElement<TValue, TPriority> buffer;
             int rightIndex = 2 * index + 2;
             int leftIndex = 2 * index + 1;
-            while (rightIndex < heap.Count() - 1)
+            while (rightIndex < heap.Count())
             {
-                // if left node switch with current node. Order is stable, due to right part of if statemenet
-                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) < 0 && comparison(heap[index].priority, heap[leftIndex].priority) <= 0)
+                // if left node switch with current node.
+                if (comparison(heap[leftIndex].priority, heap[rightIndex].priority) <= 0 && comparison(heap[leftIndex].priority, heap[index].priority) < 0)
                 {
                     buffer = heap[leftIndex];
                     heap[leftIndex] = heap[index];
                     heap[index] = buffer;
 
+                    fastAccess[buffer.value].Remove(buffer.index);
+                    buffer.index = index;
+                    fastAccess[buffer.value].Add(index, buffer);
+
                     index = leftIndex;
                     rightIndex = 2 * index + 2;
                     leftIndex = rightIndex - 1;
                 }
-                // if right node switch with current node. Order is stable, due to right part of if statemenet
-                else if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) < 0 && comparison(heap[index].priority, heap[rightIndex].priority) <= 0)
+                // if right node switch with current node.
+                else if (comparison(heap[rightIndex].priority, heap[leftIndex].priority) <= 0 && comparison(heap[rightIndex].priority, heap[index].priority) < 0)
                 {
                     buffer = heap[rightIndex];
                     heap[rightIndex] = heap[index];
                     heap[index] = buffer;
+
+                    fastAccess[buffer.value].Remove(buffer.index);
+                    buffer.index = index;
+                    fastAccess[buffer.value].Add(index, buffer);
 
                     index = rightIndex;
                     rightIndex = 2 * index + 2;
@@ -186,6 +200,19 @@ namespace BinaryHeap
                 }
                 else
                     break;
+            }
+
+            if (leftIndex == heap.Count() - 1 && comparison(heap[leftIndex].priority, heap[index].priority) < 0)
+            {
+                buffer = heap[leftIndex];
+                heap[leftIndex] = heap[index];
+                heap[index] = buffer;
+
+                fastAccess[buffer.value].Remove(buffer.index);
+                buffer.index = index;
+                fastAccess[buffer.value].Add(index, buffer);
+
+                index = leftIndex;
             }
 
             heap[index].index = index;
@@ -197,7 +224,7 @@ namespace BinaryHeap
         /// </summary>
         /// <param name="valueIndex">Index of element to bubble up.</param>
         /// <returns>Index where element end up after bubble up.</returns>
-        public int BubbleUp(int valueIndex)
+        private int BubbleUp(int valueIndex)
         {
             // bubble up
             int parentIndex;
@@ -208,7 +235,6 @@ namespace BinaryHeap
             else
                 parentIndex = (valueIndex - 1) / 2;
 
-            int oldParentIndex;
             while (parentIndex >= 0)
             {
                 // switch parent and child
@@ -217,18 +243,16 @@ namespace BinaryHeap
                     buffer = heap[parentIndex];
                     heap[parentIndex] = heap[valueIndex];
                     heap[valueIndex] = buffer;
+                    // update index in fastAccess
+                    fastAccess[buffer.value].Remove(buffer.index);
+                    buffer.index = valueIndex;
+                    fastAccess[buffer.value].Add(valueIndex, buffer);
 
-                    oldParentIndex = parentIndex;
-                    if (valueIndex % 2 == 0)
-                    {
-                        parentIndex = (valueIndex - 2) / 2;
-                        valueIndex = oldParentIndex;
-                    }
+                    valueIndex = parentIndex;
+                    if (parentIndex % 2 == 0)
+                        parentIndex = (parentIndex - 2) / 2;
                     else
-                    {
-                        parentIndex = (valueIndex - 1) / 2;
-                        valueIndex = oldParentIndex;
-                    }
+                        parentIndex = (parentIndex - 1) / 2;
                 }
                 else
                     break;
