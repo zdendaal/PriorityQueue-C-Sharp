@@ -12,3 +12,6 @@ Paramtric constructor `CustomPriorityQueue<TValue, TPriority>(Comparison<TPriori
 `Enqueue(TValue value, TPriority priority)` inserts `value` and `priority` to priority queue.</br>
 `Top()` returns root (minimum for min-heap).</br>
 `IsEmpty()` returns bool.</br>
+`IQueueElement<TValue, TPriority> Dequeue()` returns root and removes it from queue.</br>
+`TryFind(TValue value, out List<IQueueElement<TValue, TPriority>> priority)` tries find elements with `value` returns all matches.</br>
+`Update(int index, TValue value, TPriority priority)` updates element at `index` with `value` and `priority`.</br>
