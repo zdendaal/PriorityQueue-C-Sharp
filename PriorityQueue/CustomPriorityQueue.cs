@@ -82,6 +82,11 @@ namespace PriorityQueue
             return !heap.Any();
         }
 
+        /// <summary>
+        /// Returns and removes element with highest priority.
+        /// </summary>
+        /// <returns>Element with highest priority, from duplicite values returns one at top.</returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public IQueueElement<TValue, TPriority> Dequeue()
         {
             if (!heap.Any())
@@ -111,6 +116,12 @@ namespace PriorityQueue
             return value;
         }
 
+        /// <summary>
+        /// Tries find value with given <paramref name="value"/>.
+        /// </summary>
+        /// <param name="value">Value containing searching elements.</param>
+        /// <param name="priority"></param>
+        /// <returns>True if at least one value was found, if not then false.</returns>
         public bool TryFind(TValue value, out List<IQueueElement<TValue, TPriority>> priority)
         {
             if (fastAccess.TryGetValue(value, out var values))
