@@ -5,14 +5,14 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BinaryHeap
+namespace PriorityQueue
 {
     /// <summary>
     /// Implementation of priority queueu. Heap is min-heap by default.
     /// </summary>
     /// <typeparam name="TValue">Value.</typeparam>
     /// <typeparam name="TPriority">Priority according to are elements ordered.</typeparam>
-    public class BinaryHeap<TValue, TPriority>
+    public class CustomPriorityQueue<TValue, TPriority>
         where TValue : notnull
         where TPriority : notnull
     {
@@ -26,7 +26,7 @@ namespace BinaryHeap
         /// <summary>
         /// For case TPriority does implement IComparable interface.
         /// </summary>
-        public BinaryHeap()
+        public CustomPriorityQueue()
         {
             comparison = Comparer<TPriority>.Default.Compare;
         }
@@ -36,7 +36,7 @@ namespace BinaryHeap
         /// </summary>
         /// <param name="comparison">Comparison for types that not implement IComparable interface</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public BinaryHeap(Comparison<TPriority> comparison) 
+        public CustomPriorityQueue(Comparison<TPriority> comparison) 
         {
             this.comparison = comparison ?? throw new ArgumentNullException(nameof(comparison), "Method for comparison cannot be null.");
         }

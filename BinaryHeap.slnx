@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="BinaryHeap/BinaryHeap.csproj" />
+  <Project Path="PriorityQueue/PriorityQueue.csproj" />
   <Project Path="Tests/Tests.csproj" Id="cd56b811-6bc2-4712-a4b6-57f4e0d6a38f" />
 </Solution>

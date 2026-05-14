@@ -1,4 +1,4 @@
-﻿using BinaryHeap;
+﻿using PriorityQueue;
 
 namespace Tests
 {
@@ -8,7 +8,7 @@ namespace Tests
         public void Dequeue_ValuesImplementingIComparableRandomOrder_ShouldReturnElementsInPriorityOrder()
         {
             // arange
-            BinaryHeap<int, int> heap = new BinaryHeap<int, int>();
+            CustomPriorityQueue<int, int> heap = new CustomPriorityQueue<int, int>();
             // act
             heap.Enqueue(25, 9);
             heap.Enqueue(10, 11);
@@ -32,7 +32,7 @@ namespace Tests
         [Fact]
         public void Dequeue_ValuesImplementingIComparableAscendingOrder_ShouldReturnElementsInPriorityOrder()
         {
-            BinaryHeap<int, int> heap = new BinaryHeap<int, int>();
+            CustomPriorityQueue<int, int> heap = new CustomPriorityQueue<int, int>();
 
             heap.Enqueue(25, 0);
             heap.Enqueue(10, 1);
@@ -56,7 +56,7 @@ namespace Tests
         [Fact]
         public void Dequeue_ValuesImplementingIComparableDescendingOrder_ShouldReturnElementsInPriorityOrder()
         {
-            BinaryHeap<int, int> heap = new BinaryHeap<int, int>();
+            CustomPriorityQueue<int, int> heap = new CustomPriorityQueue<int, int>();
 
             heap.Enqueue(25, 7);
             heap.Enqueue(10, 6);
@@ -92,7 +92,7 @@ namespace Tests
                 else return 0;
             };
 
-            BinaryHeap<Value, Value> heap = new BinaryHeap<Value, Value>(comparison);
+            CustomPriorityQueue<Value, Value> heap = new CustomPriorityQueue<Value, Value>(comparison);
             Value[] values = new Value[]
             {
                 new Value(1, "abcd", 2),
@@ -139,7 +139,7 @@ namespace Tests
                 else return 0;
             };
 
-            BinaryHeap<Value, Value> heap = new BinaryHeap<Value, Value>(comparison);
+            CustomPriorityQueue<Value, Value> heap = new CustomPriorityQueue<Value, Value>(comparison);
             Value[] values = new Value[]
             {
                 new Value(1, "abcd", 2),
@@ -174,7 +174,7 @@ namespace Tests
         [Fact]
         public void TryFind_ValuesImplementingIComparable_ShouldFindAll()
         {
-            BinaryHeap<int, int> heap = new BinaryHeap<int, int>();
+            CustomPriorityQueue<int, int> heap = new CustomPriorityQueue<int, int>();
 
             heap.Enqueue(25, 0);
             heap.Enqueue(10, 1);
@@ -196,7 +196,7 @@ namespace Tests
         [Fact]
         public void Update_Value_ShouldUpdate()
         {
-            BinaryHeap<int, int> heap = new BinaryHeap<int, int>();
+            CustomPriorityQueue<int, int> heap = new CustomPriorityQueue<int, int>();
 
             heap.Enqueue(25, 7);
             heap.Enqueue(10, 6);

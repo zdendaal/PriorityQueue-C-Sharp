@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BinaryHeap
+namespace PriorityQueue
 {
     public interface IQueueElement<TValue, TPriority>
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 
-namespace BinaryHeap
+namespace PriorityQueue
 {
     public class QueueElement<TValue, TPriority> : IQueueElement<TValue, TPriority>
         where TValue : notnull 

@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BinaryHeap\BinaryHeap.csproj" />
+    <ProjectReference Include="..\PriorityQueue\PriorityQueue.csproj" />
   </ItemGroup>
 
   <ItemGroup>
